@@ -79,8 +79,7 @@ class KdTree:
     def insert(self, box: AaBb):
         # 是否属于当前范围
         if not self._box.intersection(box):
-            return False
-
+            return
         if self.is_leaf():
             # 若是叶子节点
             self._values.append(box)
@@ -90,8 +89,6 @@ class KdTree:
         else:
             # 如果有子节点，尝试在左右两个子节点插入
             self._insert_to_child(box)
-
-        return True
 
     def query(self, x, y):
         pass
@@ -133,16 +130,21 @@ class KdTree:
         return []
 
     def _split(self):
-        x_pos = list(map(lambda it: it.top_left[0], self._values))
-        y_pos = list(map(lambda it: it.top_left[1], self._values))
+        max_var = -1
+        max_var_axis = -1
+        axis_values = []
 
-        # 按照方差大的维度划分
-        if np.var(x_pos) > np.var(y_pos):
+        for i in range(2):
             # 按-中位数-（平均数似乎在某些场景更合理）选取划分点
-            new_box1, new_box2 = self._box.split(int(np.mean(x_pos)), 0)
-        else:
-            new_box1, new_box2 = self._box.split(int(np.mean(y_pos)), 1)
+            axis_value = list(map(lambda it: it.top_left[i], self._values))
+            axis_values.append(axis_value)
+            axis_var = np.var(axis_value)
 
+            if axis_var > max_var:
+                max_var = axis_var
+                max_var_axis = i
+
+        new_box1, new_box2 = self._box.split(int(np.mean(axis_values[max_var_axis])), max_var_axis)
         self._l_child = KdTree(new_box1, self.split_threshold, self._depth + 1, self._max_depth)
         self._r_child = KdTree(new_box2, self.split_threshold, self._depth + 1, self._max_depth)
 
@@ -150,10 +152,10 @@ class KdTree:
             self._insert_to_child(item)
         self._values = []
 
-    def _insert_to_child(self, point):
+    def _insert_to_child(self, box: AaBb):
         # 尝试在两个子树上插入
-        self._l_child.insert(point)
-        self._r_child.insert(point)
+        self._l_child.insert(box)
+        self._r_child.insert(box)
 
 
 if __name__ == '__main__':
