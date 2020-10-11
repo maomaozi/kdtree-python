@@ -2,7 +2,7 @@ import time
 
 import pygame
 
-from kd_tree import KdTree, Vec2
+from kd_tree import KdTree, Vec2, AaBb
 
 
 class Renderer:
@@ -26,15 +26,15 @@ class Renderer:
         pygame.draw.circle(self.screen, color,
                            (x * self.scale + self.border, y * self.scale + self.border), self.scale, 1)
 
-    def draw_aabb(self, top_left, down_right, color=0xffffff):
+    def draw_box(self, top_left, down_right, color=0xffffff):
         # pygame.draw.rect(self.screen, color, (
         #     top_left.x * self.scale + self.border, top_left.y * self.scale + self.border,
         #     down_right.x * self.scale + self.border, down_right.y * self.scale + self.border
         # ), 1)
-        renderer.draw_line(top_left.x, top_left.y, down_right.x, top_left.y, color)
-        renderer.draw_line(top_left.x, top_left.y, top_left.x, down_right.y, color)
-        renderer.draw_line(down_right.x, down_right.y, down_right.x, top_left.y, color)
-        renderer.draw_line(down_right.x, down_right.y, top_left.x, down_right.y, color)
+        self.draw_line(top_left.x, top_left.y, down_right.x, top_left.y, color)
+        self.draw_line(top_left.x, top_left.y, top_left.x, down_right.y, color)
+        self.draw_line(down_right.x, down_right.y, down_right.x, top_left.y, color)
+        self.draw_line(down_right.x, down_right.y, top_left.x, down_right.y, color)
 
     @staticmethod
     def render():
@@ -52,13 +52,13 @@ class Renderer:
 if __name__ == '__main__':
     renderer = Renderer(100, 100, 5)
 
-    tree = KdTree(Vec2(0, 0), Vec2(100, 100))
+    tree = KdTree(AaBb(Vec2(0, 0), Vec2(100, 100)))
 
 
-    def draw_callback(values, l, r):
+    def draw_callback(values, box: AaBb):
         for item in values:
             renderer.draw_pixel(item.x, item.y)
-        renderer.draw_aabb(l, r)
+        renderer.draw_box(box.top_left, box.down_right)
 
 
     renderer.draw_line(25, 30, 100, 80, 0xff0000)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         tree.walk(draw_callback)
 
         for p in tree.ray_intersection(Vec2(25, 30), Vec2(75, 50)):
-            renderer.draw_aabb(p[0], p[1], 0xffff00)
+            renderer.draw_box(p[0], p[1], 0xffff00)
 
         renderer.render()
         renderer.handel_events(lambda x, y: tree.insert(Vec2(x, y)))
