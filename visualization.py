@@ -1,3 +1,4 @@
+import random
 import time
 
 import pygame
@@ -16,6 +17,9 @@ class Renderer:
 
         self.screen = pygame.display.set_mode([self.win_sz_x, self.win_sz_y])
         pygame.display.flip()
+
+    def cls(self):
+        pygame.draw.rect(self.screen, self.bg_color, (0, 0, self.win_sz_x, self.win_sz_y))
 
     def draw_line(self, x1, y1, x2, y2, color=0xffffff):
         pygame.draw.aaline(self.screen, color,
@@ -57,18 +61,26 @@ if __name__ == '__main__':
 
     def draw_callback(values, box: AaBb):
         for item in values:
-            renderer.draw_pixel(item.x, item.y)
+            renderer.draw_box(item.top_left, item.down_right, 0x0000ff)
         renderer.draw_box(box.top_left, box.down_right)
 
 
-    renderer.draw_line(25, 30, 100, 80, 0xff0000)
-
     while True:
+        renderer.cls()
+        ray_point = Vec2(random.randint(0, 50), random.randint(0, 100))
+        ray_direct = Vec2(100 - ray_point.x, random.randint(0, 100) - ray_point.y)
+
+        renderer.draw_line(ray_point.x, ray_point.y, ray_point.x + ray_direct.x, ray_point.y + ray_direct.y, 0xff0000)
+
         tree.walk(draw_callback)
 
-        for p in tree.ray_intersection(Vec2(25, 30), Vec2(75, 50)):
-            renderer.draw_box(p[0], p[1], 0xffff00)
+        for box in tree.ray_intersection(ray_point, ray_direct):
+            renderer.draw_box(box.top_left, box.down_right, 0xffff00)
+
+        for box in tree.possible_values(ray_point, ray_direct):
+            renderer.draw_box(box.top_left, box.down_right, 0x00ff00)
 
         renderer.render()
-        renderer.handel_events(lambda x, y: tree.insert(Vec2(x, y)))
+        r = random.randint(1, 4)
+        renderer.handel_events(lambda x, y: tree.insert(AaBb(Vec2(x - r, y - r), Vec2(x + r, y + r))))
         time.sleep(0.1)

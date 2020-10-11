@@ -54,7 +54,7 @@ class AaBb:
 
 
 class KdTree:
-    def __init__(self, box: AaBb, split_threshold: int = 5, depth: int = 0, max_depth: int = 8):
+    def __init__(self, box: AaBb, split_threshold: int = 10, depth: int = 0, max_depth: int = 8):
         self._depth = depth
         self._max_depth = max_depth
 
@@ -76,20 +76,20 @@ class KdTree:
     def is_leaf(self):
         return self._l_child is None
 
-    def insert(self, point: Vec2):
+    def insert(self, box: AaBb):
         # 是否属于当前范围
-        if not self._is_belong(point):
+        if not self._box.intersection(box):
             return False
 
         if self.is_leaf():
             # 若是叶子节点
-            self._values.append(point)
+            self._values.append(box)
             if len(self._values) > self.split_threshold and self._depth < self._max_depth:
                 # 检查是否需要分裂
                 self._split()
         else:
             # 如果有子节点，尝试在左右两个子节点插入
-            self._insert_to_child(point)
+            self._insert_to_child(box)
 
         return True
 
@@ -100,11 +100,11 @@ class KdTree:
         t_min = 0
         t_max = 999999999.0
         for i in range(2):
-            if direct[i] < 1e-6 and (direct[i] < self._box.top_left[i] or direct[i] > self._box.down_right[i]):
+            if abs(direct[i]) < 1e-6 and (direct[i] < self._box.top_left[i] or direct[i] > self._box.down_right[i]):
                 # 垂直或水平线在范围之外
                 return False
 
-            n = 1.0 / direct[i]
+            n = 1.0 / (direct[i] + 1e-5)
             t1 = (self._box.top_left[i] - point[i]) * n
             t2 = (self._box.down_right[i] - point[i]) * n
 
@@ -121,16 +121,20 @@ class KdTree:
     def ray_intersection(self, point: Vec2, direct: Vec2):
         if self._intersection(point, direct):
             if self.is_leaf():
-                return [(self._box.top_left, self._box.down_right)]
+                return [self._box]
             return self._l_child.ray_intersection(point, direct) + self._r_child.ray_intersection(point, direct)
         return []
 
-    def possible_values(self):
-        pass
+    def possible_values(self, point: Vec2, direct: Vec2):
+        if self._intersection(point, direct):
+            if self.is_leaf():
+                return self._values
+            return self._l_child.possible_values(point, direct) + self._r_child.possible_values(point, direct)
+        return []
 
     def _split(self):
-        x_pos = list(map(lambda it: it.x, self._values))
-        y_pos = list(map(lambda it: it.y, self._values))
+        x_pos = list(map(lambda it: it.top_left[0], self._values))
+        y_pos = list(map(lambda it: it.top_left[1], self._values))
 
         # 按照方差大的维度划分
         if np.var(x_pos) > np.var(y_pos):
@@ -148,26 +152,23 @@ class KdTree:
 
     def _insert_to_child(self, point):
         # 尝试在两个子树上插入
-        self._l_child.insert(point) or self._r_child.insert(point)
-
-    def _is_belong(self, point):
-        return self._box.top_left.x < point.x <= self._box.down_right.x \
-               and self._box.top_left.y < point.y <= self._box.down_right.y
+        self._l_child.insert(point)
+        self._r_child.insert(point)
 
 
 if __name__ == '__main__':
     tree = KdTree(AaBb(Vec2(0, 0), Vec2(100, 100)))
 
-    tree.insert(Vec2(10, 10))
-    tree.insert(Vec2(20, 10))
-    tree.insert(Vec2(60, 10))
-    tree.insert(Vec2(15, 30))
-    tree.insert(Vec2(55, 80))
-    tree.insert(Vec2(35, 50))
-    tree.insert(Vec2(50, 50))
-    tree.insert(Vec2(20, 90))
-    tree.insert(Vec2(20, 80))
-    tree.insert(Vec2(30, 10))
+    tree.insert(AaBb(Vec2(10, 10), Vec2(15, 15)))
+    tree.insert(AaBb(Vec2(20, 10), Vec2(25, 15)))
+    tree.insert(AaBb(Vec2(60, 10), Vec2(65, 15)))
+    tree.insert(AaBb(Vec2(15, 30), Vec2(20, 35)))
+    tree.insert(AaBb(Vec2(55, 80), Vec2(60, 85)))
+    tree.insert(AaBb(Vec2(35, 50), Vec2(40, 55)))
+    tree.insert(AaBb(Vec2(50, 50), Vec2(55, 55)))
+    tree.insert(AaBb(Vec2(20, 90), Vec2(25, 95)))
+    tree.insert(AaBb(Vec2(20, 80), Vec2(25, 85)))
+    tree.insert(AaBb(Vec2(30, 10), Vec2(35, 15)))
 
     box1 = AaBb(Vec2(20, 20), Vec2(50, 50))
     box2 = AaBb(Vec2(10, 10), Vec2(25, 25))
