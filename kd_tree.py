@@ -138,7 +138,7 @@ class KdTree:
 
         # 按照方差大的维度划分
         if np.var(x_pos) > np.var(y_pos):
-            # 按中位数选取划分点
+            # 按-中位数-（平均数似乎在某些场景更合理）选取划分点
             new_box1, new_box2 = self._box.split(int(np.mean(x_pos)), 0)
         else:
             new_box1, new_box2 = self._box.split(int(np.mean(y_pos)), 1)
