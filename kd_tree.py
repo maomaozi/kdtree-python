@@ -6,10 +6,19 @@ class Vec2:
         self.x = x
         self.y = y
 
+    def clone(self):
+        return Vec2(self.x, self.y)
+
     def __getitem__(self, i: int):
         if i == 0:
             return self.x
         return self.y
+
+    def __setitem__(self, i: int, value):
+        if i == 0:
+            self.x = value
+        else:
+            self.y = value
 
 
 class AaBb:
@@ -33,6 +42,15 @@ class AaBb:
                or self.point_intersection(box.down_right) \
                or box.point_intersection(self.top_left) \
                or box.point_intersection(self._down_right)
+
+    def split(self, value, axis: int):
+        new_down_right = self._down_right.clone()
+        new_down_right[axis] = value
+
+        new_top_left = self._top_left.clone()
+        new_top_left[axis] = value
+
+        return AaBb(self._top_left, new_down_right), AaBb(new_top_left, self._down_right)
 
 
 class KdTree:
@@ -117,17 +135,12 @@ class KdTree:
         # 按照方差大的维度划分
         if np.var(x_pos) > np.var(y_pos):
             # 按中位数选取划分点
-            split_value = int(np.median(x_pos))
-            self._l_child = KdTree(AaBb(self._box.top_left, Vec2(split_value, self._box.down_right.y)),
-                                   self.split_threshold, self._depth + 1, self._max_depth)
-            self._r_child = KdTree(AaBb(Vec2(split_value, self._box.top_left.y), self._box.down_right),
-                                   self.split_threshold, self._depth + 1, self._max_depth)
+            new_box1, new_box2 = self._box.split(int(np.mean(x_pos)), 0)
         else:
-            split_value = int(np.median(y_pos))
-            self._l_child = KdTree(AaBb(self._box.top_left, Vec2(self._box.down_right.x, split_value)),
-                                   self.split_threshold, self._depth + 1, self._max_depth)
-            self._r_child = KdTree(AaBb(Vec2(self._box.top_left.x, split_value), self._box.down_right),
-                                   self.split_threshold, self._depth + 1, self._max_depth)
+            new_box1, new_box2 = self._box.split(int(np.mean(y_pos)), 1)
+
+        self._l_child = KdTree(new_box1, self.split_threshold, self._depth + 1, self._max_depth)
+        self._r_child = KdTree(new_box2, self.split_threshold, self._depth + 1, self._max_depth)
 
         for item in self._values:
             self._insert_to_child(item)
