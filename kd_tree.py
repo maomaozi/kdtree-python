@@ -63,7 +63,7 @@ class KdTree:
 
         self.dim = dim
 
-        self._values = []
+        self._values = set()
         self._box = box
 
         self._l_child: KdTree = None
@@ -87,16 +87,13 @@ class KdTree:
             return
         if self.is_leaf():
             # 若是叶子节点
-            self._values.append(box)
+            self._values.add(box)
             if len(self._values) > self.split_threshold and self._depth < self._max_depth:
                 # 检查是否需要分裂
                 self._split()
         else:
             # 如果有子节点，尝试在左右两个子节点插入
             self._insert_to_child(box)
-
-    def query(self, x, y):
-        pass
 
     def _intersection(self, point: Vec, direct: Vec):
         t_min = 0
@@ -131,8 +128,9 @@ class KdTree:
         if self._intersection(point, direct):
             if self.is_leaf():
                 return self._values
-            return self._l_child.possible_values(point, direct) + self._r_child.possible_values(point, direct)
-        return []
+
+            return self._l_child.possible_values(point, direct).union(self._r_child.possible_values(point, direct))
+        return set()
 
     def _split(self):
         max_var = -1
@@ -155,7 +153,7 @@ class KdTree:
 
         for item in self._values:
             self._insert_to_child(item)
-        self._values = []
+        self._values = set()
 
     def _insert_to_child(self, box: AaBb):
         # 尝试在两个子树上插入
