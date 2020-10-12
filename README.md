@@ -1,6 +1,14 @@
 # kdtree-python
 
-kdtree 2D的python实现，包括与射线可能相交的区域和物体包围盒筛选
+### kdtree + AABB implement by python
 
-附带了简单的可视化效果
+- 包括与射线可能相交的区域和物体包围盒筛选
+- 附带了简单的可视化效果
+
+---
+
+- Include ray intersection query for AABB and possible area
+- Simple visualization demo
+
+---
 ![Demo Image](/1.png)

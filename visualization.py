@@ -3,7 +3,7 @@ import time
 
 import pygame
 
-from kd_tree import KdTree, Vec2, AaBb
+from kd_tree import KdTree, Vec, AaBb
 
 
 class Renderer:
@@ -32,13 +32,13 @@ class Renderer:
 
     def draw_box(self, top_left, down_right, color=0xffffff):
         # pygame.draw.rect(self.screen, color, (
-        #     top_left.x * self.scale + self.border, top_left.y * self.scale + self.border,
-        #     down_right.x * self.scale + self.border, down_right.y * self.scale + self.border
+        #     top_left[0] * self.scale + self.border, top_left[1] * self.scale + self.border,
+        #     down_right[0] * self.scale + self.border, down_right[1] * self.scale + self.border
         # ), 1)
-        self.draw_line(top_left.x, top_left.y, down_right.x, top_left.y, color)
-        self.draw_line(top_left.x, top_left.y, top_left.x, down_right.y, color)
-        self.draw_line(down_right.x, down_right.y, down_right.x, top_left.y, color)
-        self.draw_line(down_right.x, down_right.y, top_left.x, down_right.y, color)
+        self.draw_line(top_left[0], top_left[1], down_right[0], top_left[1], color)
+        self.draw_line(top_left[0], top_left[1], top_left[0], down_right[1], color)
+        self.draw_line(down_right[0], down_right[1], down_right[0], top_left[1], color)
+        self.draw_line(down_right[0], down_right[1], top_left[0], down_right[1], color)
 
     @staticmethod
     def render():
@@ -56,7 +56,7 @@ class Renderer:
 if __name__ == '__main__':
     renderer = Renderer(100, 100, 5)
 
-    tree = KdTree(AaBb(Vec2(0, 0), Vec2(100, 100)))
+    tree = KdTree(AaBb(2, Vec(2, 0, 0), Vec(2, 100, 100)), 2)
 
 
     def draw_callback(values, box: AaBb):
@@ -67,10 +67,11 @@ if __name__ == '__main__':
 
     while True:
         renderer.cls()
-        ray_point = Vec2(random.randint(0, 50), random.randint(0, 100))
-        ray_direct = Vec2(100 - ray_point.x, random.randint(0, 100) - ray_point.y)
+        ray_point = Vec(2, random.randint(0, 50), random.randint(0, 100))
+        ray_direct = Vec(2, 100 - ray_point[0], random.randint(0, 100) - ray_point[1])
 
-        renderer.draw_line(ray_point.x, ray_point.y, ray_point.x + ray_direct.x, ray_point.y + ray_direct.y, 0xff0000)
+        renderer.draw_line(ray_point[0], ray_point[1],
+                           ray_point[0] + ray_direct[0], ray_point[1] + ray_direct[1], 0xff0000)
 
         tree.walk(draw_callback)
 
@@ -82,5 +83,5 @@ if __name__ == '__main__':
 
         renderer.render()
         r = random.randint(1, 4)
-        renderer.handel_events(lambda x, y: tree.insert(AaBb(Vec2(x - r, y - r), Vec2(x + r, y + r))))
+        renderer.handel_events(lambda x, y: tree.insert(AaBb(2, Vec(2, x - r, y - r), Vec(2, x + r, y + r))))
         time.sleep(0.1)
