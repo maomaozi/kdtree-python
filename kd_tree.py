@@ -3,17 +3,17 @@ import numpy as np
 
 class Vec:
     def __init__(self, dim: int, *values):
-        self.dim = dim
-        self.values = list(values)
+        self._dim = dim
+        self._values = list(values)
 
     def clone(self):
-        return Vec(self.dim, *self.values)
+        return Vec(self._dim, *self._values)
 
     def __getitem__(self, i: int):
-        return self.values[i]
+        return self._values[i]
 
     def __setitem__(self, i: int, value):
-        self.values[i] = value
+        self._values[i] = value
 
 
 class AaBb:
@@ -61,7 +61,7 @@ class KdTree:
         self._depth = depth
         self._max_depth = max_depth
 
-        self.dim = dim
+        self._dim = dim
 
         self._values = set()
         self._box = box
@@ -98,7 +98,7 @@ class KdTree:
     def _intersection(self, point: Vec, direct: Vec):
         t_min = 0
         t_max = 999999999.0
-        for i in range(self.dim):
+        for i in range(self._dim):
             if abs(direct[i]) < 1e-6 and (direct[i] < self._box.top_left[i] or direct[i] > self._box.down_right[i]):
                 # 垂直或水平线在范围之外
                 return False
@@ -137,7 +137,7 @@ class KdTree:
         max_var_axis = -1
         axis_values = []
 
-        for i in range(self.dim):
+        for i in range(self._dim):
             # 按-中位数-（平均数似乎在某些场景更合理）选取划分点
             axis_value = list(map(lambda it: it.top_left[i], self._values))
             axis_values.append(axis_value)
@@ -148,8 +148,8 @@ class KdTree:
                 max_var_axis = i
 
         new_box1, new_box2 = self._box.split(int(np.mean(axis_values[max_var_axis])), max_var_axis)
-        self._l_child = KdTree(new_box1, self.dim, self.split_threshold, self._depth + 1, self._max_depth)
-        self._r_child = KdTree(new_box2, self.dim, self.split_threshold, self._depth + 1, self._max_depth)
+        self._l_child = KdTree(new_box1, self._dim, self.split_threshold, self._depth + 1, self._max_depth)
+        self._r_child = KdTree(new_box2, self._dim, self.split_threshold, self._depth + 1, self._max_depth)
 
         for item in self._values:
             self._insert_to_child(item)
